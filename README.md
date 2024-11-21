@@ -7,7 +7,12 @@ can run directly in a wallet using the [LTO Network](https://ltonetwork.com) pri
 
 The SDK contains examples and tools for developing Ownables.
 
+## Requirements
+- [Node.js](https://nodejs.org/en/download)
+
 ## Quickstart
+
+This quickstart is written for Linux/Mac devices, for Windows please refer to the [Windows quickstart](#windows-quickstart).
 
 ```
 npm i
@@ -126,3 +131,60 @@ Adds armor to the robot. Only one shield can be added.
 
 ![Armor Ownable](https://user-images.githubusercontent.com/100821/221386885-7fa3d0f4-8a15-44c6-80a4-c76d71120ab7.png)
 
+## Windows quickstart
+
+The Windows quickstart is similar to the regular quickstart, but by default you will not be able to run certain commands that are in the package.json file.
+
+You also need to ensure that you have the latest visual studio community installed, with clang tools enabled.
+
+This guide helps you set up the necessities so that you can run the ownables-sdk on a Windows machine.
+
+### **1. Install npm packages**
+```bash
+npm i
+```
+
+### **2. Setup npm so it uses git bash**
+
+In order to be able to run the scripts, you need to ensure that npm is not using the default `cmd` shell, but instead uses `git-bash`.
+
+To do this, go to your `.npmrc` file (usually located in `~/.npmrc`, and add the following:
+```bash
+script-shell=C:\Program Files\git\bin\bash.exe
+shell=C:\Program Files\git\bin\bash.exe
+```
+
+### **3. Rustup**
+Run the following command so that you can set up the wasm32 target:
+```bash
+npm run rustup
+```
+This will also automatically install visual studio community, which is required to be able to proceed.
+
+### **4. Configure visual studio community (VSC)**
+You can configure VSC during the initial installation, or alternatively, after the installation is done by opening the `Visual Studio Installer`.
+
+From there you can modify the settings. Ensure that you enable the following configuration in the VSC installer:
+```
+Select "Desktop development with C++"
+Under "Desktop development with C++", select "C++ clang tools for windows"
+```
+
+Finally, add clang to your path, which should be located here:
+```
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin
+```
+
+### **5. Build ownables**
+You will need the `zip` command to proceed, which by default Windows does not have.
+
+There are many ways to add this, [here](https://stackoverflow.com/a/55749636) is an example on how to install `zip`.
+
+Once you have access to the zip command, you can begin building all the ownables:
+```
+npm run ownables:build-all
+```
+
+If the build is successful, you can run `npm start` which spins up the server.
+
+Navigate to http://localhost:3000/ to see the wallet and begin importing ownables!
