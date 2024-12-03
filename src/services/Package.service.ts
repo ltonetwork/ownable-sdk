@@ -96,7 +96,6 @@ export default class PackageService {
     const packages = (LocalStorageService.get("packages") ||
       []) as TypedPackage[];
 
-    // Find the package by name or cid and check uniqueMessageHash if provided
     const found = packages.find(
       (pkg) =>
         (pkg.name === nameOrCid ||
@@ -360,6 +359,7 @@ export default class PackageService {
   static async importFromRelay() {
     try {
       const relayData = await RelayService.readRelayData();
+
       if (!relayData || !Array.isArray(relayData) || relayData.length === 0) {
         return null;
       }

@@ -16,30 +16,6 @@ export class RelayService {
   /**
    * Handle All Signed Requests
    */
-  // static async handleSignedRequest(method: string, url: string) {
-  //   try {
-  //     const sender = LTOService.account;
-  //     const request = {
-  //       headers: {},
-  //       method,
-  //       url,
-  //     };
-
-  //     const signedRequest = await sign(request, { signer: sender });
-
-  //     const response = await axios({
-  //       method: signedRequest.method,
-  //       url: signedRequest.url,
-  //       headers: signedRequest.headers,
-  //     });
-
-  //     return response;
-  //   } catch (error) {
-  //     console.error("Error in handleSignedRequest:", error);
-  //     throw error;
-  //   }
-  // }
-
   static async handleSignedRequest(
     method: string,
     url: string,
@@ -165,24 +141,46 @@ export class RelayService {
     const address = sender.address;
     const isRelayAvailable = await this.isRelayUp();
     if (!isRelayAvailable) return null;
-    const url = `${this.relayURL}/inboxes/${address}/`;
+
+    const url = `${this.relayURL}/inboxes/${address}/list`;
+
     try {
       const responses = await this.handleSignedRequest("GET", url);
 
-      if (!responses.data.length) return null;
+      if (!responses.data.metadata.length) return null;
 
       const ownableData = await Promise.all(
-        responses.data.map(async (response: MessageInfo) => {
+        responses.data.metadata.map(async (response: MessageInfo) => {
+          if (!response.hash) {
+            console.warn("Skipping response without a hash:", response);
+            return null;
+          }
+
           const messageUrl = `${this.relayURL}/inboxes/${address}/${response.hash}`;
-          const infoResponse = await this.handleSignedRequest(
-            "GET",
-            messageUrl
-          );
-          const message = Message.from(infoResponse.data);
-          return { message, messageHash: infoResponse.data.hash };
+          try {
+            const infoResponse = await this.handleSignedRequest(
+              "GET",
+              messageUrl
+            );
+
+            if (!infoResponse.data.sender) {
+              console.warn("Skipping response without a sender:", infoResponse);
+              return null;
+            }
+
+            const message = Message.from(infoResponse.data);
+
+            return { message, messageHash: infoResponse.data.hash };
+          } catch (error) {
+            console.error(
+              `Failed to process message with hash ${response.hash}:`,
+              error
+            );
+            return null;
+          }
         })
       );
-      return ownableData;
+      return ownableData.filter((data) => data !== null);
     } catch (error) {
       console.error("Failed to read relay data:", error);
       return null;

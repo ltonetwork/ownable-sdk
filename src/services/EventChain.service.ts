@@ -10,6 +10,7 @@ interface StoredChainInfo {
   chain: IEventChainJSON;
   state: string;
   package: string;
+  uniqueMessageHash: string;
   created: Date;
   latestHash: string;
   keywords: string[];
@@ -32,6 +33,7 @@ export default class EventChainService {
       package: string;
       created: Date;
       keywords: string[];
+      uniqueMessageHash: string;
     }>
   > {
     const ids = (await IDBService.listStores())
@@ -44,10 +46,17 @@ export default class EventChainService {
           const {
             chain,
             package: packageCid,
+            uniqueMessageHash,
             created,
             keywords,
           } = await this.load(id);
-          return { chain, package: packageCid, created, keywords };
+          return {
+            chain,
+            package: packageCid,
+            created,
+            keywords,
+            uniqueMessageHash,
+          };
         } catch (error) {
           console.error(`Failed to load chain with id ${id}:`, error);
           return null;
@@ -66,6 +75,7 @@ export default class EventChainService {
     package: string;
     created: Date;
     keywords: string[];
+    uniqueMessageHash: string;
   }> {
     const chainInfo = (await IDBService.getMap(`ownable:${id}`).then((map) =>
       Object.fromEntries(map.entries())
@@ -76,6 +86,7 @@ export default class EventChainService {
       package: packageCid,
       created,
       keywords,
+      uniqueMessageHash,
     } = chainInfo;
 
     return {
@@ -83,6 +94,7 @@ export default class EventChainService {
       package: packageCid,
       created,
       keywords,
+      uniqueMessageHash,
     };
   }
 
@@ -91,6 +103,7 @@ export default class EventChainService {
       chain: EventChain;
       stateDump: StateDump;
       keywords?: string[];
+      uniqueMessageHash?: string;
     }>
   ): Promise<void> {
     const anchors: Array<{ key: Binary; value: Binary }> = [];

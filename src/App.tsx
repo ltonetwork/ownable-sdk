@@ -27,7 +27,6 @@ import { SnackbarProvider, enqueueSnackbar } from "notistack";
 import { TypedOwnableInfo } from "./interfaces/TypedOwnableInfo";
 import CreateOwnable from "./components/CreateOwnable";
 import { RelayService } from "./services/Relay.service";
-//import { CheckForMessages } from "./services/CheckMessages.service";
 import { PollingService } from "./services/Polling.service";
 
 export default function App() {
@@ -38,8 +37,11 @@ export default function App() {
   const [address, setAddress] = useState(LTOService.address);
   const [message, setMessages] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
+  // const [ownables, setOwnables] = useState<
+  //   Array<{ chain: EventChain; package: string }>
+  // >([]);
   const [ownables, setOwnables] = useState<
-    Array<{ chain: EventChain; package: string }>
+    Array<{ chain: EventChain; package: string; uniqueMessageHash?: string }>
   >([]);
   const [consuming, setConsuming] = useState<{
     chain: EventChain;
@@ -138,6 +140,7 @@ export default function App() {
           .map((data: TypedPackage) => ({
             chain: data.chain,
             package: data.cid,
+            uniqueMessageHash: data.uniqueMessageHash, // Include uniqueMessageHash
           })),
       ]);
 
@@ -165,8 +168,13 @@ export default function App() {
     setIsImporting(false);
   };
 
-  const deleteOwnable = (id: string, packageCid: string) => {
+  const deleteOwnable = (
+    id: string,
+    packageCid: string,
+    uniqueMessageHash?: string
+  ) => {
     const pkg = PackageService.info(packageCid);
+    console.log(pkg, uniqueMessageHash);
 
     setConfirm({
       severity: "error",
@@ -186,9 +194,6 @@ export default function App() {
 
         //delete ownable from relay
         const uniqueMessageHash = pkg.uniqueMessageHash;
-        if (uniqueMessageHash) {
-          await RelayService.removeOwnable(uniqueMessageHash);
-        }
 
         //Update knownhashes in localstorage
         await LocalStorageService.removeItem(
@@ -201,6 +206,10 @@ export default function App() {
           "uniqueMessageHash",
           pkg.uniqueMessageHash
         );
+
+        if (uniqueMessageHash) {
+          await RelayService.removeOwnable(uniqueMessageHash);
+        }
       },
     });
   };
@@ -350,7 +359,7 @@ export default function App() {
         columnSpacing={6}
         rowSpacing={4}
       >
-        {ownables.map(({ chain, package: packageCid }) => (
+        {ownables.map(({ chain, package: packageCid, uniqueMessageHash }) => (
           <Grid
             key={chain.id}
             xs={12}
@@ -361,8 +370,11 @@ export default function App() {
             <Ownable
               chain={chain}
               packageCid={packageCid}
+              uniqueMessageHash={uniqueMessageHash}
               selected={consuming?.chain.id === chain.id}
-              onDelete={() => deleteOwnable(chain.id, packageCid)}
+              onDelete={() =>
+                deleteOwnable(chain.id, packageCid, uniqueMessageHash)
+              }
               onRemove={() => removeOwnable(chain.id)}
               onConsume={(info) =>
                 setConsuming({ chain, package: packageCid, info })

@@ -33,6 +33,7 @@ interface OwnableProps {
   chain: EventChain;
   packageCid: string;
   selected: boolean;
+  uniqueMessageHash?: string;
   onDelete: () => void;
   onConsume: (info: TypedOwnableInfo) => void;
   onRemove: () => void;
@@ -55,7 +56,7 @@ export default class Ownable extends Component<OwnableProps, OwnableState> {
 
   constructor(props: OwnableProps) {
     super(props);
-    this.pkg = PackageService.info(props.packageCid);
+    this.pkg = PackageService.info(props.packageCid, props?.uniqueMessageHash);
     this.iframeRef = createRef();
     this.state = {
       initialized: false,
@@ -106,6 +107,7 @@ export default class Ownable extends Component<OwnableProps, OwnableState> {
         });
 
         if (this.pkg.uniqueMessageHash) {
+          console.log(this.pkg.uniqueMessageHash);
           //Remove ownable from relay's inbox
           await RelayService.removeOwnable(this.pkg.uniqueMessageHash);
 
@@ -229,7 +231,11 @@ export default class Ownable extends Component<OwnableProps, OwnableState> {
 
   async onLoad(): Promise<void> {
     if (!this.pkg.isDynamic) {
-      await OwnableService.initStore(this.chain, this.pkg.cid);
+      await OwnableService.initStore(
+        this.chain,
+        this.pkg.cid,
+        this.pkg.uniqueMessageHash
+      );
       return;
     }
 
@@ -239,7 +245,12 @@ export default class Ownable extends Component<OwnableProps, OwnableState> {
     });
 
     try {
-      await OwnableService.init(this.chain, this.pkg.cid, rpc);
+      await OwnableService.init(
+        this.chain,
+        this.pkg.cid,
+        rpc,
+        this.props.uniqueMessageHash
+      );
       this.setState({ initialized: true });
     } catch (e) {
       if (e instanceof Cancelled) return;
